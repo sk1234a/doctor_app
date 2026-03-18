@@ -1,33 +1,19 @@
 const jwt = require("jsonwebtoken");
 
-exports.verifyToken = (req,res,next)=>{
+module.exports = (req, res, next) => {
+  try {
+    const token = req.headers.authorization?.split(" ")[1];
 
-const authHeader = req.headers.authorization || req.headers.Authorization;
+    if (!token) {
+      return res.status(401).json({ success: false, message: "No token" });
+    }
 
-console.log("HEADER:", authHeader);
-console.log("SECRET:", process.env.JWT_SECRET);
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
-if(!authHeader){
-return res.status(401).json({
-success:false,
-message:"Token required"
-});
-}
+    req.user = decoded; // id yahan milega
 
-const token = authHeader.split(" ")[1];
-
-jwt.verify(token,process.env.JWT_SECRET,(err,decoded)=>{
-
-if(err){
-return res.status(403).json({
-success:false,
-message:"Invalid or expired token"
-});
-}
-
-req.user=decoded;
-next();
-
-});
-
+    next();
+  } catch (err) {
+    res.status(401).json({ success: false, message: "Invalid token" });
+  }
 };
